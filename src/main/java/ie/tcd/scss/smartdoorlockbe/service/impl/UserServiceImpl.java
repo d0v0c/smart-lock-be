@@ -1,0 +1,57 @@
+package ie.tcd.scss.smartdoorlockbe.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import ie.tcd.scss.smartdoorlockbe.domain.User;
+import ie.tcd.scss.smartdoorlockbe.mapper.UserMapper;
+import ie.tcd.scss.smartdoorlockbe.service.UserService;
+import ie.tcd.scss.smartdoorlockbe.utils.BusinessException;
+import ie.tcd.scss.smartdoorlockbe.utils.StatusCode;
+import org.springframework.stereotype.Service;
+
+/**
+ * @author xylingying
+ * @description 针对表【user(后台用户表)】的数据库操作Service实现
+ * @createDate 2025-03-05 16:04:41
+ */
+@Service
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    @Override
+    public void register(User request) {
+        // 查询用户名是否重复
+        // @Select("SELECT username FROM user WHERE username = #{username}")
+        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.select(User::getUsername)
+                .eq(User::getUsername, request.getUsername());
+        User user = this.getOne(lambdaQueryWrapper);
+        if (user != null) {
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "账户已存在");
+        }
+        boolean ret = this.save(request);
+        if (!ret) {
+            throw new BusinessException(StatusCode.SYSTEM_ERROR, "插入数据失败");
+        }
+    }
+
+    @Override
+    public String login(User request) {
+        // 查询用户名是否存在
+        // @Select("SELECT username, password FROM user WHERE username = #{username}")
+        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.select(User::getUsername, User::getPassword)
+                .eq(User::getUsername, request.getUsername());
+        User user = this.getOne(lambdaQueryWrapper);
+        if (user == null) {
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "用户不存在");
+        }
+        if (!user.getPassword().equals(request.getPassword())) {
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "密码错误");
+        }
+        return "token";
+    }
+}
+
+
+
+
