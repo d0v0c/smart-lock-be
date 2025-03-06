@@ -5,7 +5,7 @@ USE smart_door_lock;
 CREATE TABLE user
 (
     username     VARCHAR(50)                        NOT NULL COMMENT '用户名',
-    password     VARCHAR(255)                       NOT NULL COMMENT '登录密码',
+    password     VARCHAR(60)                        NOT NULL COMMENT '登录密码',
     email        VARCHAR(100)                       NULL COMMENT '邮箱',
     phone        VARCHAR(20)                        NULL COMMENT '电话',
     created_time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
@@ -21,13 +21,21 @@ CREATE TABLE device
     device_name  VARCHAR(255)                       NULL COMMENT '设备名',
     is_locked    BOOLEAN  DEFAULT FALSE             NULL COMMENT '门锁状态',
     is_connected BOOLEAN  DEFAULT FALSE             NOT NULL COMMENT '设备连接状态',
-    owner        VARCHAR(50)                        NOT NULL COMMENT '所有者ID',
     created_time DATETIME DEFAULT CURRENT_TIMESTAMP NULL COMMENT '设备创建时间',
     updated_time DATETIME DEFAULT CURRENT_TIMESTAMP NULL on update CURRENT_TIMESTAMP COMMENT '最后更新时间',
-    PRIMARY KEY (device_id),
-    FOREIGN KEY (owner) REFERENCES user (username)
+    PRIMARY KEY (device_id)
 )
     COMMENT 'ESP32设备表';
+
+DROP TABLE IF EXISTS user_device_merge;
+CREATE TABLE user_device_merge
+(
+    username  VARCHAR(50) NOT NULL COMMENT '用户名',
+    device_id BIGINT      NOT NULL COMMENT '设备号',
+    FOREIGN KEY (username) REFERENCES user (username),
+    FOREIGN KEY (device_id) REFERENCES device (device_id)
+)
+    comment '用户与门禁的多对多关系';
 
 CREATE TABLE access_code
 (
@@ -35,7 +43,7 @@ CREATE TABLE access_code
     code         VARCHAR(10)                        NOT NULL COMMENT '密码',
     device_id    BIGINT                             NOT NULL COMMENT '关联设备ID',
     owner        VARCHAR(50)                        NOT NULL COMMENT '所有者ID',
-    valid_from   DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '有效期起始时间',
+    valid_from   DATETIME                           NOT NULL COMMENT '有效期起始时间',
     valid_to     DATETIME                           NULL COMMENT '有效期结束时间',
     created_time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
     PRIMARY KEY (code_id),
@@ -44,17 +52,18 @@ CREATE TABLE access_code
 )
     COMMENT '门锁密码表';
 
+DROP TABLE IF EXISTS alert;
 CREATE TABLE alert
 (
     alert_id     BIGINT                             NOT NULL AUTO_INCREMENT COMMENT '警报ID',
-    username     VARCHAR(50)                        NOT NULL COMMENT '通知的用户',
+    username     VARCHAR(50)                        NULL COMMENT '通知的用户',
+    device_id    BIGINT                             NULL COMMENT '报警的设备',
     type         VARCHAR(50)                        NOT NULL COMMENT '警报类型',
     message      TEXT                               NULL COMMENT '警报内容',
     created_time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
-    PRIMARY KEY (alert_id),
-    FOREIGN KEY (username) REFERENCES user (username)
+    PRIMARY KEY (alert_id)
 )
-    COMMENT '报警表';
+    COMMENT '警报记录表';
 
 CREATE TABLE log
 (

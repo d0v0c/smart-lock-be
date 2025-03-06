@@ -11,5 +11,5 @@ import ie.tcd.scss.smartdoorlockbe.domain.User;
 public interface UserService extends IService<User> {
     void register(User user);
 
-    String login(User user);
+//    void login(User user);
 }

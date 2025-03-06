@@ -6,21 +6,25 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import ie.tcd.scss.smartdoorlockbe.domain.User;
+import ie.tcd.scss.smartdoorlockbe.mapper.UserMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.security.interfaces.RSAPrivateKey;
@@ -29,7 +33,11 @@ import java.security.interfaces.RSAPublicKey;
 /**
  * @author xylingying
  * @date 2025-03-05 21:29
- * @description: Spring Security 配置类
+ * @description: Spring Security 配置类，
+ * SecurityFilterChain 配置了拦截除登录注册外的所有URL响应
+ * UserDetailsService 配置了加载用户信息的方式是从数据库加载
+ * JWT 的编码器与解码器 配置了密钥从文件中加载
+ * PasswordEncoder 配置
  */
 @Configuration
 public class SecurityConfig {
@@ -46,14 +54,20 @@ public class SecurityConfig {
         // @formatter:off
         http
                 .authorizeHttpRequests((authorize) -> authorize
-                        .anyRequest().authenticated() // 任何请求都需要认证
+                        .requestMatchers( "/api/user/register").permitAll()
+                        .anyRequest().authenticated() // 任何请求都需要认证 authenticated()，除了注册
                 )
-                .csrf((csrf) -> csrf.ignoringRequestMatchers("/api/user/token")) // 禁用 /token 端点上的 CSRF 防护
-                .httpBasic(Customizer.withDefaults()) // 启用基本认证，默认配置
-//                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt) // 配置资源服务器为 JWT 模式
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())))
-                .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf((csrf) -> csrf
+                        .disable())
+                        //.ignoringRequestMatchers("/api/user/login", "/api/user/register")) // 禁用注册登录端点上的 CSRF 防护
+                // 发现 Basic 时触发账号密码认证逻辑，默认配置
+                .httpBasic(Customizer.withDefaults())
+                // 发现 Bearer 时触发 JWT 的认证逻辑
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.decoder(jwtDecoder())))
                 // 设置会话管理策略为无状态（REST API 推荐无状态，以支持水平扩展）
+                .sessionManagement((session) -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling((exceptions) -> exceptions
                         .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint()) // 设置认证入口点，处理未认证的请求
                         .accessDeniedHandler(new BearerTokenAccessDeniedHandler()) // 设置拒绝访问处理器，处理权限不足的请求
@@ -62,17 +76,29 @@ public class SecurityConfig {
         return http.build(); // 构建并返回过滤链
     }
 
+    @Autowired
+    private UserMapper userMapper;
+
+    // 配置密码加密算法用 BCrypt 算法
     @Bean
-    UserDetailsService users() {
-        // 定义一个内存中的用户存储，以用于演示，生产环境推荐使用数据库或其他存储方式
-        // @formatter:off
-        return new InMemoryUserDetailsManager(
-                User.withUsername("user") // 创建一个用户名为 "user" 的测试用户
-                        .password("{noop}password") // 定义密码为 "password"，并指定 "{noop}" 表示不进行加密
-                        .authorities("app") // 设置该用户的权限为 "app"
-                        .build() // 构建用户对象
-        );
-        // @formatter:on
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+        return username -> {
+            // 从数据库加载用户信息
+            User dbUser = userMapper.selectById(username);
+            if (dbUser == null) {
+                throw new UsernameNotFoundException("User '" + username + "' 找不到");
+            }
+            // 根据从数据库获取的用户数据构建 UserDetails 对象
+            return org.springframework.security.core.userdetails.User.withUsername(dbUser.getUsername())
+                    .password(dbUser.getPassword())
+                    .authorities("app") // 不考虑权限
+                    .build();
+        };
     }
 
     @Bean

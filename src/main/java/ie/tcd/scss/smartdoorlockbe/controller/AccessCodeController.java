@@ -6,6 +6,7 @@ import ie.tcd.scss.smartdoorlockbe.vo.req.AccessCodeGenerateReqVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,12 +34,12 @@ public class AccessCodeController {
 //    }
     @Operation(summary = "生成密码", description = "发送设备+时间信息，服务器返回生成的密码")
     @PostMapping
-    public Result<String> generateCode(@RequestBody @Validated AccessCodeGenerateReqVO request) {
-        // 从请求对象中获取参数并调用对应的Service方法
+    public Result<String> generateCode(@RequestBody @Validated AccessCodeGenerateReqVO request, Authentication authentication) {
         Long deviceId = request.getDeviceId();
         ZonedDateTime validFrom = request.getValidFrom();
         ZonedDateTime validTo = request.getValidTo();
-        String code = accessCodeService.generateCode(deviceId, validFrom, validTo);
+        String owner = authentication.getName();
+        String code = accessCodeService.generateCode(deviceId, validFrom, validTo, owner);
         return Result.success(code);
     }
 }

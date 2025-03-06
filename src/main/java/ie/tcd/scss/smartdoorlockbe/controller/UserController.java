@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Tag(name = "用户管理")
 public class UserController {
     @Autowired
-    UserService userService;
+    private UserService userService;
 
     @Operation(summary = "注册")
     @PostMapping("/register")
@@ -36,17 +36,14 @@ public class UserController {
         return Result.success(null);
     }
 
-    @Operation(summary = "登录")
-    @PostMapping("/login")
-    public Result<String> login(@RequestBody @Validated User user) {
-        return Result.success(userService.login(user));
-    }
-
     @Autowired
     JwtEncoder encoder;
 
-    @PostMapping("/token")
-    public String token(Authentication authentication) {
+    @Operation(summary = "登录")
+    @GetMapping("/login")
+    public Result<String> login(Authentication authentication) {
+//        userService.login(user);
+        // 通过FilterChain后签发JWT
         Instant now = Instant.now();
         long expiry = 36000L;    // 令牌的有效时间为 36000秒 (10小时)
         // @formatter:off
@@ -70,11 +67,13 @@ public class UserController {
         //  "scope": "ROLE_USER ROLE_ADMIN"
         //}
         // @formatter:on
-        return this.encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        return Result.success(
+                this.encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue()
+        );
     }
 
-    @GetMapping("/")
-    public String hello(Authentication authentication) {
-        return "Hello, " + authentication.getName() + "!";
-    }
+//    @GetMapping("/")
+//    public String hello(Authentication authentication) {
+//        return "Hello, " + authentication.getName() + "!";
+//    }
 }

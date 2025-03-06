@@ -20,7 +20,6 @@ public class Device {
     private String deviceName;
     private Boolean isLocked;
     private Boolean isConnected;
-    private String owner;
     private ZonedDateTime createdTime;
     private ZonedDateTime updatedTime;
 }

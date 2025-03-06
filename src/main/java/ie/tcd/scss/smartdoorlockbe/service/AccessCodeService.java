@@ -11,7 +11,7 @@ import java.time.ZonedDateTime;
  * @createDate 2025-02-22 16:15:31
  */
 public interface AccessCodeService extends IService<AccessCode> {
-    String generateCode(Long deviceId, ZonedDateTime from, ZonedDateTime to);
+    String generateCode(Long deviceId, ZonedDateTime from, ZonedDateTime to, String owner);
 
     void confirmUpdate(String payload);
 }

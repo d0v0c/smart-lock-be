@@ -9,7 +9,6 @@
         <result property="deviceName" column="device_name" jdbcType="VARCHAR"/>
         <result property="isLocked" column="is_locked" jdbcType="TINYINT"/>
         <result property="isConnected" column="is_connected" jdbcType="TINYINT"/>
-        <result property="owner" column="owner" jdbcType="VARCHAR"/>
         <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
         <result property="updatedTime" column="updated_time" jdbcType="TIMESTAMP"/>
     </resultMap>
@@ -17,6 +16,6 @@
     <sql id="Base_Column_List">
         device_id
         ,device_name,is_locked,
-        is_connected,owner,created_time,updated_time
+        is_connected,created_time,updated_time
     </sql>
 </mapper>

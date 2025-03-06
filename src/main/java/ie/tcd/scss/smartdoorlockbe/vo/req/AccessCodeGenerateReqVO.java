@@ -13,4 +13,9 @@ public class AccessCodeGenerateReqVO {
     private ZonedDateTime validFrom;
     @Future(message = "validTo 必须是将来的时间")
     private ZonedDateTime validTo;
+
+    public void setValidFrom(ZonedDateTime validFrom) {
+        // 当反序列化过程中 validFrom 字段为 null 时，使用当前时间
+        this.validFrom = (validFrom == null ? ZonedDateTime.now() : validFrom);
+    }
 }

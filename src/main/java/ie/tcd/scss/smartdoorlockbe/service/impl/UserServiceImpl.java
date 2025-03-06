@@ -7,6 +7,8 @@ import ie.tcd.scss.smartdoorlockbe.mapper.UserMapper;
 import ie.tcd.scss.smartdoorlockbe.service.UserService;
 import ie.tcd.scss.smartdoorlockbe.utils.BusinessException;
 import ie.tcd.scss.smartdoorlockbe.utils.StatusCode;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public void register(User request) {
@@ -28,28 +32,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user != null) {
             throw new BusinessException(StatusCode.VALIDATION_ERROR, "账户已存在");
         }
+        // 加密登录密码
+        request.setPassword(passwordEncoder.encode(request.getPassword()));
         boolean ret = this.save(request);
         if (!ret) {
             throw new BusinessException(StatusCode.SYSTEM_ERROR, "插入数据失败");
         }
     }
 
-    @Override
-    public String login(User request) {
-        // 查询用户名是否存在
-        // @Select("SELECT username, password FROM user WHERE username = #{username}")
-        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.select(User::getUsername, User::getPassword)
-                .eq(User::getUsername, request.getUsername());
-        User user = this.getOne(lambdaQueryWrapper);
-        if (user == null) {
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "用户不存在");
-        }
-        if (!user.getPassword().equals(request.getPassword())) {
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "密码错误");
-        }
-        return "token";
-    }
+//    @Override
+//    public void login(User request) {
+//        // 查询用户名是否存在
+//        // @Select("SELECT username, password FROM user WHERE username = #{username}")
+//        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+//        lambdaQueryWrapper.select(User::getUsername, User::getPassword)
+//                .eq(User::getUsername, request.getUsername());
+//        User user = this.getOne(lambdaQueryWrapper);
+//        if (user == null) {
+//            throw new BusinessException(StatusCode.VALIDATION_ERROR, "用户不存在");
+//        }
+//        if (!user.getPassword().equals(request.getPassword())) {
+//            throw new BusinessException(StatusCode.VALIDATION_ERROR, "密码错误");
+//        }
+//    }
 }
 
 

@@ -39,7 +39,7 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
      * 发送 MQTT 消息给 MCU，并等待其返回确认消息
      */
     @Override
-    public String generateCode(Long deviceId, ZonedDateTime from, ZonedDateTime to) {
+    public String generateCode(Long deviceId, ZonedDateTime from, ZonedDateTime to, String owner) {
         // 生成 6 位随机数字
         SecureRandom secureRandom = new SecureRandom();
         int randomPassword = 100000 + secureRandom.nextInt(900000);
@@ -77,8 +77,7 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
             accessCode.setCodeId(snowflakeId);
             accessCode.setCode(passcode);
             accessCode.setDeviceId(deviceId);
-            // TODO: 从Token查询owner
-            accessCode.setOwner("zhangsan");
+            accessCode.setOwner(owner);
             accessCode.setValidFrom(from);
             accessCode.setValidTo(to);
             this.save(accessCode);
