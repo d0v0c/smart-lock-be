@@ -35,7 +35,7 @@ POST http://63.32.52.62/api/code
 Authorization: Bearer JWT
 body:
 {
-    "deviceId": 10002,
+    "deviceId": 10001,
     "validFrom": "2025-03-22T00:00+08:00",
     "validTo": "2027-03-05T00:30+00:00"
 }
@@ -63,7 +63,7 @@ device/lock
 
 ```json
 {
-  "deviceId": "10002",
+  "deviceId": "10001",
   "isLocked": true
 }
 ```
@@ -74,7 +74,7 @@ device/lock/code
 
 ```json
 {
-  "deviceId": "10002",
+  "deviceId": "10001",
   "codeId": "收到的codeId",
   "code": "收到的code"
 }
@@ -101,7 +101,7 @@ server/lock/code
 {
   "code": "645941",
   "codeId": 1893389214167859200,
-  "deviceId": 10002,
+  "deviceId": 10001,
   "validFrom": "2025-03-22T00:00+08:00",
   "validTo": "2026-02-22T00:00+08:00"
 }

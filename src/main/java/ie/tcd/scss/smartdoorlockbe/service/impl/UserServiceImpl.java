@@ -40,6 +40,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
     }
 
+    @Override
+    public void update(User user) {
+        if (user.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        boolean updated = this.updateById(user);
+        if (!updated) {
+            throw new BusinessException(StatusCode.SYSTEM_ERROR, "更新数据失败");
+        }
+    }
+
+    @Override
+    public boolean resetPassword(User user) {
+        User storedUser = this.getById(user.getUsername());
+        if (storedUser == null) {
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "用户不存在");
+        }
+        if (!storedUser.getEmail().equals(user.getEmail())) {
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "邮箱错误");
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return this.updateById(user);
+    }
+
 //    @Override
 //    public void login(User request) {
 //        // 查询用户名是否存在

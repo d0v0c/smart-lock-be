@@ -1,10 +1,15 @@
 package ie.tcd.scss.smartdoorlockbe.controller;
 
 import ie.tcd.scss.smartdoorlockbe.domain.User;
+import ie.tcd.scss.smartdoorlockbe.domain.validation.RegisterGroup;
 import ie.tcd.scss.smartdoorlockbe.service.UserService;
+import ie.tcd.scss.smartdoorlockbe.utils.BusinessException;
 import ie.tcd.scss.smartdoorlockbe.utils.Result;
+import ie.tcd.scss.smartdoorlockbe.utils.StatusCode;
+import ie.tcd.scss.smartdoorlockbe.vo.resp.UserInfoRespVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,7 +36,7 @@ public class UserController {
 
     @Operation(summary = "注册")
     @PostMapping("/register")
-    public Result<Void> register(@RequestBody @Validated User user) {
+    public Result<Void> register(@RequestBody @Validated(RegisterGroup.class) User user) {
         userService.register(user);
         return Result.success(null);
     }
@@ -72,8 +77,25 @@ public class UserController {
         );
     }
 
-//    @GetMapping("/")
-//    public String hello(Authentication authentication) {
-//        return "Hello, " + authentication.getName() + "!";
-//    }
+    @GetMapping()
+    public Result<UserInfoRespVO> getUser(Authentication authentication) {
+        User user = userService.getById(authentication.getName());
+        UserInfoRespVO userInfoRespVO = new ModelMapper().map(user, UserInfoRespVO.class);
+        return Result.success(userInfoRespVO);
+    }
+
+    @PutMapping()
+    public Result<Void> updateUser(@RequestBody @Validated User user, Authentication authentication) {
+        user.setUsername(authentication.getName());
+        userService.update(user);
+        return Result.success(null);
+    }
+
+    @PutMapping("/reset")
+    public Result<Void> resetPassword(@RequestBody @Validated(RegisterGroup.class) User user) {
+        if (!userService.resetPassword(user)) {
+            throw new BusinessException(StatusCode.SYSTEM_ERROR, "密码重置失败");
+        }
+        return Result.success(null);
+    }
 }

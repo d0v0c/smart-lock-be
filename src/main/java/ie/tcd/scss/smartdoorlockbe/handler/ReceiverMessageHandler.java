@@ -34,6 +34,8 @@ public class ReceiverMessageHandler implements MessageHandler {
         } else if ("device/lock/alert".equals(topic)) {
             // 收到ESP32的警报消息
             alertService.notifyAlert(message.getPayload().toString());
+        } else if ("device/lock/all-code".equals(topic)) {
+            accessCodeService.getAllAccessCode(message.getPayload().toString());
         }
     }
 }

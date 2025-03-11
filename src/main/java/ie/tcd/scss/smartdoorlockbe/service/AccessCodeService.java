@@ -14,4 +14,6 @@ public interface AccessCodeService extends IService<AccessCode> {
     String generateCode(Long deviceId, ZonedDateTime from, ZonedDateTime to, String owner);
 
     void confirmUpdate(String payload);
+
+    void getAllAccessCode(String payload);
 }

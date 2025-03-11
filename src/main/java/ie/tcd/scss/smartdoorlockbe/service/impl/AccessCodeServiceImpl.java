@@ -2,6 +2,7 @@ package ie.tcd.scss.smartdoorlockbe.service.impl;
 
 import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson2.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import ie.tcd.scss.smartdoorlockbe.domain.AccessCode;
 import ie.tcd.scss.smartdoorlockbe.mapper.AccessCodeMapper;
@@ -12,15 +13,21 @@ import ie.tcd.scss.smartdoorlockbe.utils.StatusCode;
 import ie.tcd.scss.smartdoorlockbe.vo.req.AccessCodeReqMqtt;
 import ie.tcd.scss.smartdoorlockbe.vo.resp.AccessCodeRespMqtt;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 /**
  * @author xylingying
@@ -30,6 +37,10 @@ import java.util.concurrent.TimeoutException;
 @Slf4j
 @Service
 public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessCode> implements AccessCodeService {
+    // 注入自身代理对象
+    @Autowired
+    @Lazy // 避免循环依赖问题，如果启动时报错，通常可加此注解解决
+    private AccessCodeServiceImpl self;
     @Autowired
     private MqttMessageSender mqttMessageSender;
     // 用于保存等待回复的 CompletableFuture，key 为 deviceId
@@ -72,7 +83,7 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
             if (!result.equals(passcode)) {  // 也有可能不必校验
                 throw new RuntimeException("ESP32返回的密码与生成密码不一致");
             }
-            // 5. 保存到数据库（mybatis-plus this.save()）
+            // 5. 保存到数据库
             AccessCode accessCode = new AccessCode();
             accessCode.setCodeId(snowflakeId);
             accessCode.setCode(passcode);
@@ -80,7 +91,7 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
             accessCode.setOwner(owner);
             accessCode.setValidFrom(from);
             accessCode.setValidTo(to);
-            this.save(accessCode);
+            self.saveAndEvict(accessCode);
             return passcode;
         } catch (TimeoutException e) {
             future.cancel(true); // 超时时取消任务
@@ -115,5 +126,43 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
             System.out.println("解析MCU确认消息失败");
             log.error(e.getMessage());
         }
+    }
+
+    /**
+     * 使用 Spring Cache 自动缓存查询结果，key 使用 deviceId
+     */
+    @Cacheable(value = "AccessCode", key = "#deviceId")
+    public List<AccessCodeReqMqtt> getAccessCodesCached(Long deviceId) {
+        LambdaQueryWrapper<AccessCode> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AccessCode::getDeviceId, deviceId);
+        List<AccessCode> list = this.list(queryWrapper);
+
+        return list.stream().map(accessCode -> {
+            AccessCodeReqMqtt req = new AccessCodeReqMqtt();
+            BeanUtils.copyProperties(accessCode, req);
+            return req;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 使用 Spring Cache 自动更新数据库写入后 redis 缓存，key 使用 deviceId
+     */
+    @CacheEvict(value = "AccessCode", key = "#accessCode.deviceId")
+    public boolean saveAndEvict(AccessCode accessCode) {
+        return this.save(accessCode);
+    }
+
+    /**
+     * 接收 deviceId
+     * 从数据库查询code validFrom validTo -> 从redis查询
+     * 包装成List<AccessCodeReqMqtt>返回给ESP32
+     */
+    public void getAllAccessCode(String payload) {
+        AccessCodeRespMqtt deviceIdResp = JSON.parseObject(payload, AccessCodeRespMqtt.class);
+        Long deviceId = deviceIdResp.getDeviceId();
+
+        List<AccessCodeReqMqtt> reqMqtts = self.getAccessCodesCached(deviceId);
+
+        mqttMessageSender.send("server/lock/all-code", JSON.toJSONString(reqMqtts));
     }
 }

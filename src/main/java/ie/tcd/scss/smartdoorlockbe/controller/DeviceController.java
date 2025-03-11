@@ -7,6 +7,8 @@ import ie.tcd.scss.smartdoorlockbe.utils.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +23,8 @@ public class DeviceController {
     private MqttMessageSender mqttMessageSender;
     @Autowired
     private DeviceService deviceService;
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     //    @GetMapping("/api/{deviceId}/{isLocked}")
 //    public String setLockedStatus(
@@ -35,8 +39,7 @@ public class DeviceController {
 //    }
     @Operation(summary = "获取设备信息", description = "返回ESP32设备列表")
     @GetMapping
-    public Result<List<Device>> getDeviceStatus() {
-        List<Device> devices = deviceService.list();
-        return Result.success(devices);
+    public Result<List<Device>> getDeviceStatus(Authentication authentication) {
+        return Result.success(deviceService.getByUsername(authentication.getName()));
     }
 }

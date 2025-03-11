@@ -54,7 +54,7 @@ public class SecurityConfig {
         // @formatter:off
         http
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers( "/api/user/register", "/swagger-ui/**", "/v3/api-docs*/**").permitAll()
+                        .requestMatchers( "/api/user/register", "/api/user/reset", "/swagger-ui/**", "/v3/api-docs*/**").permitAll()
                         .anyRequest().authenticated() // 任何请求都需要认证 authenticated()，除了注册
                 )
                 .csrf((csrf) -> csrf

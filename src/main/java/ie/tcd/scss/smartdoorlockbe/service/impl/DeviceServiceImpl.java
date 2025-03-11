@@ -16,6 +16,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author xylingying
@@ -70,6 +71,16 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         } catch (BusinessException e) {
             System.out.println(e.getMessage());
         }
+    }
+
+    @Override
+    public List<Device> getByUsername(String username) {
+        LambdaQueryWrapper<UserDeviceMerge> eq = new LambdaQueryWrapper<UserDeviceMerge>().eq(UserDeviceMerge::getUsername, username);
+        List<UserDeviceMerge> list = userDeviceMergeService.list(eq);
+
+        return list.stream()
+                .map(userDevice -> this.getById(userDevice.getDeviceId()))
+                .collect(Collectors.toList());
     }
 }
 
