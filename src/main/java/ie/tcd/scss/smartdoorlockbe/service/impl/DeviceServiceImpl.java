@@ -4,9 +4,11 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import ie.tcd.scss.smartdoorlockbe.domain.Device;
+import ie.tcd.scss.smartdoorlockbe.domain.Log;
 import ie.tcd.scss.smartdoorlockbe.domain.UserDeviceMerge;
 import ie.tcd.scss.smartdoorlockbe.mapper.DeviceMapper;
 import ie.tcd.scss.smartdoorlockbe.service.DeviceService;
+import ie.tcd.scss.smartdoorlockbe.service.LogService;
 import ie.tcd.scss.smartdoorlockbe.service.UserDeviceMergeService;
 import ie.tcd.scss.smartdoorlockbe.utils.BusinessException;
 import ie.tcd.scss.smartdoorlockbe.utils.Result;
@@ -29,6 +31,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     private UserDeviceMergeService userDeviceMergeService;
     @Autowired
     private SimpMessageSendingOperations messagingTemplate;
+    @Autowired
+    private LogService logService;
 
     /**
      * 设备刚上线，向 device/lock发消息时，解析 deviceId，同时将 isConnected设置为 true：
@@ -42,7 +46,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             Device device = JSON.parseObject(payload, Device.class);
             device.setIsConnected(true);
             if (device.getDeviceId() == null) {
-                throw new BusinessException(StatusCode.VALIDATION_ERROR, "deviceId 不能为空");
+                throw new BusinessException(StatusCode.VALIDATION_ERROR, "deviceId cannot be null");
             }
             // 根据设备的id查询设备数据
             LambdaQueryWrapper<Device> lambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -53,15 +57,17 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                     device.setDeviceName("ESP32_" + device.getDeviceId());
                 }
                 this.save(device);
+                logService.save(new Log(Log.ActionType.NEW_DEVICE, payload));
             } else {     // 设备已经存在，修改设备的状态
                 this.updateById(device);
+                logService.save(new Log(Log.ActionType.UPDATE_DEVICE, payload));
             }
-
+            // 查询device对应的用户
             LambdaQueryWrapper<UserDeviceMerge> wrapper = new LambdaQueryWrapper<>();
             wrapper.select(UserDeviceMerge::getUsername);
             wrapper.eq(UserDeviceMerge::getDeviceId, device.getDeviceId());
             List<UserDeviceMerge> list = userDeviceMergeService.list(wrapper);
-
+            // 查询设备信息通知给用户
             Device deviceNotify = this.getOne(lambdaQueryWrapper);
 
             for (UserDeviceMerge userDeviceMerge : list) {

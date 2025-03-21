@@ -4,9 +4,11 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import ie.tcd.scss.smartdoorlockbe.domain.Alert;
+import ie.tcd.scss.smartdoorlockbe.domain.Log;
 import ie.tcd.scss.smartdoorlockbe.domain.UserDeviceMerge;
 import ie.tcd.scss.smartdoorlockbe.mapper.AlertMapper;
 import ie.tcd.scss.smartdoorlockbe.service.AlertService;
+import ie.tcd.scss.smartdoorlockbe.service.LogService;
 import ie.tcd.scss.smartdoorlockbe.service.UserDeviceMergeService;
 import ie.tcd.scss.smartdoorlockbe.utils.BusinessException;
 import ie.tcd.scss.smartdoorlockbe.utils.Result;
@@ -30,13 +32,16 @@ public class AlertServiceImpl extends ServiceImpl<AlertMapper, Alert> implements
     private UserDeviceMergeService userDeviceMergeService;
     @Autowired
     private SimpMessageSendingOperations messagingTemplate;
+    @Autowired
+    private LogService logService;
 
     @Override
     public void notifyAlert(String payload) {
         Alert recvAlert = JSON.parseObject(payload, Alert.class);
         if (recvAlert.getAlertId() != null) {
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "没有警报的deviceId");
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "deviceId cannot be null");
         }
+        // 存储警报信息
         LambdaQueryWrapper<UserDeviceMerge> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.select(UserDeviceMerge::getUsername);
         lambdaQueryWrapper.eq(UserDeviceMerge::getDeviceId, recvAlert.getDeviceId());
@@ -46,6 +51,8 @@ public class AlertServiceImpl extends ServiceImpl<AlertMapper, Alert> implements
         BeanUtils.copyProperties(recvAlert, alertNotifyVO);
 
         this.save(recvAlert);
+        logService.save(new Log(Log.ActionType.ALERT_NOTIFY, payload));
+        // 通知用户警报信息
         for (UserDeviceMerge userDeviceMerge : list) {
             System.out.println("向用户" + userDeviceMerge.getUsername() + "报警");
             messagingTemplate.convertAndSendToUser(userDeviceMerge.getUsername(), "/queue/alert", Result.success(alertNotifyVO));

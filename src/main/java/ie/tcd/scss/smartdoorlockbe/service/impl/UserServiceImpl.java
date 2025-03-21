@@ -30,13 +30,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .eq(User::getUsername, request.getUsername());
         User user = this.getOne(lambdaQueryWrapper);
         if (user != null) {
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "账户已存在");
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "The account already exists");
         }
         // 加密登录密码
         request.setPassword(passwordEncoder.encode(request.getPassword()));
         boolean ret = this.save(request);
         if (!ret) {
-            throw new BusinessException(StatusCode.SYSTEM_ERROR, "插入数据失败");
+            throw new BusinessException(StatusCode.SYSTEM_ERROR, "Failed to insert data");
         }
     }
 
@@ -47,7 +47,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         boolean updated = this.updateById(user);
         if (!updated) {
-            throw new BusinessException(StatusCode.SYSTEM_ERROR, "更新数据失败");
+            throw new BusinessException(StatusCode.SYSTEM_ERROR, "Failed to update data");
         }
     }
 
@@ -55,10 +55,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public boolean resetPassword(User user) {
         User storedUser = this.getById(user.getUsername());
         if (storedUser == null) {
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "用户不存在");
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "The username does not exist");
         }
         if (!storedUser.getEmail().equals(user.getEmail())) {
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "邮箱错误");
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "Email address does not match the username");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return this.updateById(user);

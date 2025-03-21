@@ -77,6 +77,7 @@ public class UserController {
         );
     }
 
+    @Operation(summary = "获取用户信息")
     @GetMapping()
     public Result<UserInfoRespVO> getUser(Authentication authentication) {
         User user = userService.getById(authentication.getName());
@@ -91,10 +92,11 @@ public class UserController {
         return Result.success(null);
     }
 
+    @Operation(summary = "找回密码")
     @PutMapping("/reset")
     public Result<Void> resetPassword(@RequestBody @Validated(RegisterGroup.class) User user) {
         if (!userService.resetPassword(user)) {
-            throw new BusinessException(StatusCode.SYSTEM_ERROR, "密码重置失败");
+            throw new BusinessException(StatusCode.SYSTEM_ERROR, "Failed to reset password");
         }
         return Result.success(null);
     }

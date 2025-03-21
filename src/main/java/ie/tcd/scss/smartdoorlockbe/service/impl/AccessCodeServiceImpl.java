@@ -5,8 +5,10 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import ie.tcd.scss.smartdoorlockbe.domain.AccessCode;
+import ie.tcd.scss.smartdoorlockbe.domain.Log;
 import ie.tcd.scss.smartdoorlockbe.mapper.AccessCodeMapper;
 import ie.tcd.scss.smartdoorlockbe.service.AccessCodeService;
+import ie.tcd.scss.smartdoorlockbe.service.LogService;
 import ie.tcd.scss.smartdoorlockbe.service.MqttMessageSender;
 import ie.tcd.scss.smartdoorlockbe.utils.BusinessException;
 import ie.tcd.scss.smartdoorlockbe.utils.StatusCode;
@@ -43,6 +45,9 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
     private AccessCodeServiceImpl self;
     @Autowired
     private MqttMessageSender mqttMessageSender;
+    @Autowired
+    private LogService logService;
+
     // 用于保存等待回复的 CompletableFuture，key 为 deviceId
     private final ConcurrentHashMap<Long, CompletableFuture<String>> pendingAccessCodeMap = new ConcurrentHashMap<>();
 
@@ -95,9 +100,9 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
             return passcode;
         } catch (TimeoutException e) {
             future.cancel(true); // 超时时取消任务
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "超时：等待ESP32确认超过30秒");
+            throw new BusinessException(StatusCode.VALIDATION_ERROR, "Timeout: Waiting for ESP32 confirmation exceeded 30 seconds");
         } catch (Exception e) {
-            throw new BusinessException(StatusCode.SYSTEM_ERROR, "生成门锁密码失败：" + e.getMessage());
+            throw new BusinessException(StatusCode.SYSTEM_ERROR, "Failed to generate passcode" + e.getMessage());
         } finally {
             pendingAccessCodeMap.remove(snowflakeId);
         }
@@ -116,6 +121,7 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
                 CompletableFuture<String> future = pendingAccessCodeMap.get(response.getCodeId());
                 if (future != null) {
                     future.complete(response.getCode());
+                    logService.save(new Log(Log.ActionType.CODE_CONFIRMATION, payload));
                 } else {
                     System.out.println("收到MCU确认，但找不到对应的 pending future，codeId: " + response.getCodeId());
                 }
@@ -164,5 +170,14 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
         List<AccessCodeReqMqtt> reqMqtts = self.getAccessCodesCached(deviceId);
 
         mqttMessageSender.send("server/lock/all-code", JSON.toJSONString(reqMqtts));
+
+        logService.save(new Log(Log.ActionType.GET_CODE, payload));
+    }
+
+    @Override
+    public List<AccessCode> getByUsername(String username) {
+        LambdaQueryWrapper<AccessCode> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AccessCode::getOwner, username);
+        return this.list(queryWrapper);
     }
 }

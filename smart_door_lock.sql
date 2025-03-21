@@ -65,11 +65,12 @@ CREATE TABLE alert
 )
     COMMENT '警报记录表';
 
+DROP TABLE IF EXISTS log;
 CREATE TABLE log
 (
     log_id             BIGINT                             NOT NULL AUTO_INCREMENT COMMENT '日志ID',
-    device_id          BIGINT                             NOT NULL COMMENT '关联设备ID',
-    user_id            VARCHAR(50)                        NOT NULL COMMENT '关联用户ID',
+    device_id          BIGINT                             NULL COMMENT '关联设备ID',
+    user_id            VARCHAR(50)                        NULL COMMENT '关联用户ID',
     action_type        VARCHAR(50)                        NOT NULL COMMENT '操作类型',
     action_description TEXT                               NULL COMMENT '操作描述内容',
     created_time       DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import ie.tcd.scss.smartdoorlockbe.domain.AccessCode;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 /**
  * @author xylingying
@@ -16,4 +17,6 @@ public interface AccessCodeService extends IService<AccessCode> {
     void confirmUpdate(String payload);
 
     void getAllAccessCode(String payload);
+
+    List<AccessCode> getByUsername(String username);
 }

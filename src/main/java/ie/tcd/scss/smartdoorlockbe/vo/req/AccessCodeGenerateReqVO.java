@@ -8,10 +8,10 @@ import java.time.ZonedDateTime;
 
 @Data
 public class AccessCodeGenerateReqVO {
-    @NotNull(message = "deviceId 不能为空")
+    @NotNull(message = "deviceId cannot be null")
     private Long deviceId;
     private ZonedDateTime validFrom;
-    @Future(message = "validTo 必须是将来的时间")
+    @Future(message = "validTo must be a future time")
     private ZonedDateTime validTo;
 
     public void setValidFrom(ZonedDateTime validFrom) {
