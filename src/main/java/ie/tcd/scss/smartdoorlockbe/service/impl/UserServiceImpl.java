@@ -55,10 +55,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public boolean resetPassword(User user) {
         User storedUser = this.getById(user.getUsername());
         if (storedUser == null) {
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "The username does not exist");
+            throw new BusinessException(StatusCode.ACCOUNT_NOT_FOUND, "The username does not exist");
         }
         if (!storedUser.getEmail().equals(user.getEmail())) {
-            throw new BusinessException(StatusCode.VALIDATION_ERROR, "Email address does not match the username");
+            throw new BusinessException(StatusCode.EMAIL_NOT_MATCH, "Email address does not match the username");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return this.updateById(user);

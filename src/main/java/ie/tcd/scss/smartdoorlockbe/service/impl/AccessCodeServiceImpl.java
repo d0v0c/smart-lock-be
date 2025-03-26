@@ -15,7 +15,7 @@ import ie.tcd.scss.smartdoorlockbe.utils.StatusCode;
 import ie.tcd.scss.smartdoorlockbe.vo.req.AccessCodeReqMqtt;
 import ie.tcd.scss.smartdoorlockbe.vo.resp.AccessCodeRespMqtt;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -68,7 +68,7 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
         // 1. 构造发送给 MCU 的 JSON 消息
         AccessCodeReqMqtt request = new AccessCodeReqMqtt();
         request.setDeviceId(deviceId);
-        request.setCodeId(snowflakeId);
+        request.setCodeId(snowflakeId.toString());
         request.setCode(passcode);
         request.setValidFrom(from);
         request.setValidTo(to);
@@ -144,8 +144,9 @@ public class AccessCodeServiceImpl extends ServiceImpl<AccessCodeMapper, AccessC
         List<AccessCode> list = this.list(queryWrapper);
 
         return list.stream().map(accessCode -> {
-            AccessCodeReqMqtt req = new AccessCodeReqMqtt();
-            BeanUtils.copyProperties(accessCode, req);
+            //            BeanUtils.copyProperties(accessCode, req);
+            AccessCodeReqMqtt req = new ModelMapper().map(accessCode, AccessCodeReqMqtt.class);
+            req.setCodeId(accessCode.getCodeId().toString());
             return req;
         }).collect(Collectors.toList());
     }

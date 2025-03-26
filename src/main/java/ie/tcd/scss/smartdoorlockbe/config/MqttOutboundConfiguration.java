@@ -32,7 +32,7 @@ public class MqttOutboundConfiguration {
                 pahoClientFactory);
         messageHandler.setAsync(true);
         messageHandler.setDefaultQos(0);
-        messageHandler.setDefaultTopic("default");
+        messageHandler.setDefaultTopic("server");
         return messageHandler;
     }
 }

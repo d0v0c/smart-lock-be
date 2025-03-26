@@ -11,7 +11,7 @@ import java.time.ZonedDateTime;
 @AllArgsConstructor
 public class AccessCodeReqMqtt {
     private Long deviceId;
-    private Long codeId;
+    private String codeId;
     private String code;
     private ZonedDateTime validFrom;
     private ZonedDateTime validTo;

@@ -5,12 +5,15 @@ spring:
   mqtt:
     username: alice
     password: alice123456
-    url: tcp://52.169.3.167:1883
+    #    url: tcp://52.169.3.167:1883
+    url: ssl://emqx.8117.me:8883
     pubClientId: pub_spring
     subClientId: sub_spring
     #    多个订阅主题用`,`隔开
     subTopic: device/lock/#
-
+    # 指定fullchain.pem证书路径
+    certFile: classpath:fullchain.pem
+  
   # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -29,7 +32,7 @@ spring:
       time-to-live: 10h
 
 server:
-  port: 80
+  port: 8080
 
 mybatis-plus:
   configuration:
@@ -40,3 +43,7 @@ mybatis-plus:
 jwt:
   private.key: classpath:app.key
   public.key: classpath:app.pub
+
+file:
+  dir: /app/firmware/
+#  dir: ./firmware/
