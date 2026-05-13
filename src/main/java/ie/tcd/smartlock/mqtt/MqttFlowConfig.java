@@ -58,7 +58,8 @@ public class MqttFlowConfig {
 
     /**
      * 发送 MQTT 消息
-     * MessageHandler 出站通道适配器
+     * <p>
+     * mqttOutboundChannel -> MessageHandler 出站适配器
      */
     @Bean
     public IntegrationFlow mqttOutboundFlow(Mqttv5ClientManager clientManager) {
@@ -77,14 +78,16 @@ public class MqttFlowConfig {
     }
 
     /**
-     * 接收消息
-     * Adapter 入站通道适配器
+     * 接收 MQTT 消息
+     * <p>
+     * Adapter -> enrichHeaders --hash-> strand
+     * <p>
+     * 流程到 .route(hash) 为止：按 deviceId 哈希到 16 根 strand 之一。
+     * action 分流在 {@link #afterStrandFlow}，那里已经在 strand 虚拟线程上。
      */
     @Bean
     public IntegrationFlow mqttInboundFlow(Mqttv5ClientManager clientManager,
-                                           DeviceService deviceService,
-                                           AccessCodeService accessCodeService,
-                                           AlertService alertService) {
+                                           MqttStrandConfig strandConfig) {
         // 配置入站
         Mqttv5PahoMessageDrivenChannelAdapter adapter = new Mqttv5PahoMessageDrivenChannelAdapter(clientManager, "device");
 
@@ -115,9 +118,32 @@ public class MqttFlowConfig {
                             return parts.length >= 3 ? parts[2] : "unknown";
                         })
                 )
+                // 根据 deviceId 分流到多个 StrandChannels 上
+                // 按 deviceId 哈希分配到固定的 strand。Paho 线程在此把消息丢到 strand 队列后立即返回；
+                // 队列满时由 RejectedExecutionHandler 阻塞 Paho 线程（见 MqttStrandConfig）。
+                .route(Message.class, m -> {
+                    Long deviceId = m.getHeaders().get("extracted_deviceId", Long.class);
+                    int idx = Math.floorMod(Long.hashCode(deviceId), MqttStrandConfig.STRAND_COUNT);
+                    return strandConfig.getStrandChannels().get(idx);
+                })
+                .get();
+    }
+
+    /**
+     * Strand 之后的 action 分流。
+     * <p>
+     * 入口是 afterStrandChannel（DirectChannel），所以这里的 handler 同步运行在
+     * 上游 strand 的虚拟线程上，保证同一设备的消息保序执行。
+     */
+    @Bean
+    public IntegrationFlow afterStrandFlow(MqttStrandConfig strandConfig,
+                                           DeviceService deviceService,
+                                           AccessCodeService accessCodeService,
+                                           AlertService alertService) {
+        return IntegrationFlow
+                .from(strandConfig.getAfterStrandChannel())
                 // 提取路由键 (extracted_action) 分流
                 .route(Message.class, m -> m.getHeaders().get("extracted_action", String.class),
-                        // 配置路由映射关系
                         mapping -> mapping
                                 .subFlowMapping("status", sf -> sf.handle(Device.class,
                                         (payload, headers) -> {
