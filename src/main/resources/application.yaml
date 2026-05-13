@@ -1,26 +1,25 @@
 spring:
   application:
     name: smart-door-lock-be
-
-  mqtt:
-    username: alice
-    password: alice123456
-    #    url: tcp://52.169.3.167:1883
-    url: ssl://emqx.8117.me:8883
-    pubClientId: pub_spring
-    subClientId: sub_spring
-    #    多个订阅主题用`,`隔开
-    subTopic: device/lock/#
-    # 指定fullchain.pem证书路径
-    certFile: classpath:fullchain.pem
   
   # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    #    url: jdbc:mysql://127.0.0.1:3306/smart_door_lock?useSSL=false&serverTimezone=UTC
-    url: jdbc:mysql://34.249.191.107:3306/smart_door_lock
+    url: jdbc:mysql://127.0.0.1:3306/smart_lock?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: iotcs7ns2
+    password: ${DB_PASSWORD:iotcs7ns2}
+    # 数据库连接池 HikariCP
+    hikari:
+      # 最大连接数，经验公式：连接数 = ((核心数 * 2) + 有效磁盘数)。默认 10 个连接。
+      maximum-pool-size: 20
+      # 最小空闲连接数。通常与 maximum-pool-size 保持一致，避免频繁销毁和重建连接的开销。
+      minimum-idle: 20
+      # 线程从池中获取连接的最大等待时间（毫秒），超时将抛出 SQLException。默认 30000（30秒）。
+      connection-timeout: 30000
+      # 空闲连接在池中保留的最大时间（毫秒），超过此时间且连接数大于 minimum-idle 时将被回收。
+      idle-timeout: 600000
+      # 连接在池中的最大生命周期（毫秒）。强烈建议设置，且必须比数据库本身的 wait_timeout 小几分钟，防止数据库端主动断开连接引发错误。
+      max-lifetime: 1800000
 
   data:
     redis:
@@ -31,19 +30,38 @@ spring:
       # 缓存过期时间
       time-to-live: 10h
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:app.pub
+
+
 server:
   port: 8080
 
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    #    自动转换 数据库下划线命名 -> Java 实体类驼峰命名
     map-underscore-to-camel-case: true
+  #    去 mapper 文件夹下找到 Mapper 结尾的 XML 文件。
   mapper-locations: classpath*:mapper/*Mapper.xml
 
-jwt:
-  private.key: classpath:app.key
-  public.key: classpath:app.pub
+smart-lock:
+  mqtt:
+    username: alice
+    password: ${MQTT_PASSWORD:alice123456}
+    url: ssl://emqx.8117.me:8883
+    client-id: spring_boot_4
+    # 指定 fullchain.pem 证书路径
+    cert-file: classpath:fullchain.pem
 
-file:
-  dir: /app/firmware/
-#  dir: ./firmware/
+  jwt:
+    public-key: classpath:app.pub
+    private-key: classpath:app.key
+
+  file:
+    #  dir: /app/firmware/
+    dir: ./firmware/
+
+

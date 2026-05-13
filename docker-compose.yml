@@ -1,0 +1,32 @@
+services:
+  emqx:
+    image: emqx/emqx-enterprise:6.2.0
+    container_name: emqx-enterprise
+    # 设置容器内部的主机名。EMQX 使用 data/mnesia/<节点名> 作为数据存储目录，固定 hostname 避免数据丢失
+    hostname: node1.emqx.com
+    environment:
+      # 配置 EMQX 的节点名称。格式为 "前缀@主机名"，与上方的 hostname 保持一致
+      EMQX_NODE_NAME: "emqx@node1.emqx.com"
+    ports:
+      - "1883:1883"     # MQTT/TCP 协议默认端口，用于大多数物联网设备直连
+      - "8883:8883"     # MQTT/TCP w/ SSL 端口，加密的设备端连接
+      - "18083:18083"   # EMQX Dashboard 可视化管理控制台端口
+    volumes:
+      - ./.docker/emqx/data:/opt/emqx/data
+      - ./.docker/emqx/log:/opt/emqx/log
+
+  mysql:
+    image: mysql:9.7
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - ./.docker/mysql/data:/var/lib/mysql
+
+  redis:
+    image: redis:8.6-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"

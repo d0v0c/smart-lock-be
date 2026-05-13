@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="ie.tcd.scss.smartdoorlockbe.mapper.DeviceMapper">
+<mapper namespace="ie.tcd.smartlock.mapper.DeviceMapper">
 
-    <resultMap id="BaseResultMap" type="ie.tcd.scss.smartdoorlockbe.domain.Device">
+    <resultMap id="BaseResultMap" type="ie.tcd.smartlock.model.entity.Device">
         <id property="deviceId" column="device_id" jdbcType="BIGINT"/>
         <result property="deviceName" column="device_name" jdbcType="VARCHAR"/>
         <result property="isLocked" column="is_locked" jdbcType="TINYINT"/>

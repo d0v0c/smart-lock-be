@@ -1,0 +1,33 @@
+spring:
+  # mysql
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/smart_lock?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: ${DB_PASSWORD:123456}
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+mybatis-plus:
+  configuration:
+    #    MyBatis 的日志全部打印到控制台
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging.level.org.springframework:
+  # 连接/断开/订阅事件本身
+  web.socket: DEBUG
+  # STOMP 业务层（消息怎么在 broker 里流转）
+  messaging.simp: DEBUG
+  # 用户目的地改写（/user/xxx → /queue/xxx-userN）
+  messaging.simp.user: TRACE
+  # 内存 broker 的订阅匹配与投递
+  messaging.simp.broker: TRACE
+
+
+smart-lock:
+  mqtt:
+    username: admin
+    password: ${MQTT_PASSWORD:alice123456}
+    url: tcp://127.0.0.1:1883

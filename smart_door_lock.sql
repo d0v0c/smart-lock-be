@@ -1,6 +1,6 @@
-DROP DATABASE IF EXISTS smart_door_lock;
-CREATE DATABASE IF NOT EXISTS smart_door_lock;
-USE smart_door_lock;
+DROP DATABASE IF EXISTS smart_lock;
+CREATE DATABASE IF NOT EXISTS smart_lock;
+USE smart_lock;
 
 CREATE TABLE user
 (
