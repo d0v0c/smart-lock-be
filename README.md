@@ -14,7 +14,7 @@
 
 ## 技术栈
 
-- 登录鉴权：基于 Spring Security 的 ==长短 JWT 机制==
+- 登录鉴权：基于 Spring Security 的长短 JWT 机制
 - 门锁通信：基于 Spring Integration + MQTT Topic 的多线程路由分发
 - 实时告警：基于 WebSocket + STOMP 的服务端推送
 - 生成临时密码：基于 Spring Boot 4 的协程（虚拟线程）+ CompletableFuture 非阻塞延迟确认。
@@ -35,7 +35,7 @@ mvn spring-boot:run
 
 给 Spring Integration 提交 Issue。
 
-==在 Spring Boot 层利用拦截器（Interceptor）或 AOP，结合 Redis 的 SETNX (SET if Not eXists) 命令实现极轻量级的分布式防抖锁。==
+在 Spring Boot 层 AOP，结合 Redis 的 SETNX 命令实现轻量防抖锁。
 
 ## API 接口文档
 
