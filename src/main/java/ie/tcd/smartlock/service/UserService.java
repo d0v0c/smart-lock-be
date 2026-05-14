@@ -2,11 +2,11 @@ package ie.tcd.smartlock.service;
 
 import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import ie.tcd.smartlock.config.SecurityConfig;
 import ie.tcd.smartlock.config.SmartLockProperties;
 import ie.tcd.smartlock.mapper.UserMapper;
 import ie.tcd.smartlock.model.entity.User;
 import ie.tcd.smartlock.model.vo.resp.LoginRespVO;
+import ie.tcd.smartlock.security.SecurityConfig;
 import ie.tcd.smartlock.utils.BusinessException;
 import ie.tcd.smartlock.utils.StatusCode;
 import lombok.RequiredArgsConstructor;
@@ -37,13 +37,6 @@ public class UserService extends ServiceImpl<UserMapper, User> {
     private final JwtDecoder refreshJwtDecoder;
     private final StringRedisTemplate stringRedisTemplate;
     private final SmartLockProperties properties;
-
-    @jakarta.annotation.PostConstruct
-    void debugDecoder() {
-        log.info("refreshJwtDecoder = {}, hash={}",
-                refreshJwtDecoder, System.identityHashCode(refreshJwtDecoder));
-    }
-
 
     public void register(User userReq) {
         // 查询用户名是否重复
@@ -136,6 +129,7 @@ public class UserService extends ServiceImpl<UserMapper, User> {
                 .expiresAt(now.plus(accessTtl))
                 .claim(SecurityConfig.TYP_CLAIM, SecurityConfig.TYP_ACCESS)
                 .build();
+        // 自定义 EdDsaJwtEncoder 内部固定用 EdDSA 签名，调用方无需再传 JwsHeader
         String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(accessClaims)).getTokenValue();
 
         // 生成 refresh token

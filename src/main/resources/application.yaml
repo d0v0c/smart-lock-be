@@ -53,9 +53,7 @@ smart-lock:
   jwt:
     public-key: classpath:app.pub
     private-key: classpath:app.key
-    # access token 10 小时（业务接口用）
     access-ttl: 10h
-    # refresh token 7 天（只用于换新 access）
     refresh-ttl: 7d
 
   file:

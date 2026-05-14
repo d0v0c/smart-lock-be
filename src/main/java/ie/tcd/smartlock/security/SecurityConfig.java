@@ -1,11 +1,6 @@
-package ie.tcd.smartlock.config;
+package ie.tcd.smartlock.security;
 
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
-import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.proc.SecurityContext;
+import ie.tcd.smartlock.config.SmartLockProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,11 +9,14 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
-import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.web.SecurityFilterChain;
 
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.EdECPrivateKey;
+import java.security.interfaces.EdECPublicKey;
 
 /**
  * @author xylingying
@@ -34,14 +32,12 @@ public class SecurityConfig {
     public static final String TYP_CLAIM = "typ";
     public static final String TYP_ACCESS = "access";
     public static final String TYP_REFRESH = "refresh";
-    // 从配置文件中注入 RSA 公钥，用于 JWT 验证
-    private final RSAPublicKey publicKey;
-    // 从配置文件中注入 RSA 私钥，用于 JWT 签名
-    private final RSAPrivateKey privateKey;
+    private final EdECPrivateKey privateKey;
+    private final EdECPublicKey publicKey;
 
     public SecurityConfig(SmartLockProperties properties) {
-        this.publicKey = properties.jwt().publicKey();
         this.privateKey = properties.jwt().privateKey();
+        this.publicKey = properties.jwt().publicKey();
     }
 
     @Bean
@@ -73,14 +69,17 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // 配置 JWT 编码器，用私钥对 JWT 进行签名（access 和 refresh 共用同一对 RSA 密钥）
+    /**
+     * 自定义 JWT 签名器，直接调用 JDK 自带的 java.security.Signature("Ed25519")
+     * <br>
+     * 彻底跳过 Nimbus 对 Ed25519 的诈骗式支持（底层调 Google Tink 库，不支持 Java 接口，函数直接抛异常）
+     * 比方说 OctetKeyPair.java 如下：
+     * public PublicKey toPublicKey() throws JOSEException {
+     * throw new JOSEException("Export to java.security.PublicKey not supported");
+     */
     @Bean
     JwtEncoder jwtEncoder() {
-        JWK jwk = new RSAKey.Builder(this.publicKey) // 构建 RSA 密钥对，其中包含公钥
-                .privateKey(this.privateKey) // 设置私钥，用于签名
-                .build();
-        JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk)); // 创建一个 JWK (JSON Web Key) 集合
-        return new NimbusJwtEncoder(jwks); // 返回基于 Nimbus 的 JWT 编码器
+        return new EdDsaJwtEncoder(privateKey);
     }
 
     /**
@@ -90,9 +89,9 @@ public class SecurityConfig {
      */
     @Bean
     JwtDecoder accessJwtDecoder() {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(this.publicKey).build();
+        EdDsaJwtDecoder decoder = new EdDsaJwtDecoder(publicKey);
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
-                JwtValidators.createDefault(),                                  // 默认校验：exp、nbf
+                JwtValidators.createDefault(),                                  // 默认校验
                 new JwtClaimValidator<String>(TYP_CLAIM, TYP_ACCESS::equals)    // 强制 typ=access
         ));
         return decoder;
@@ -104,7 +103,7 @@ public class SecurityConfig {
      */
     @Bean("refreshJwtDecoder")
     JwtDecoder refreshJwtDecoder() {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(this.publicKey).build();
+        EdDsaJwtDecoder decoder = new EdDsaJwtDecoder(publicKey);
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 JwtValidators.createDefault(),
                 new JwtClaimValidator<String>(TYP_CLAIM, TYP_REFRESH::equals)

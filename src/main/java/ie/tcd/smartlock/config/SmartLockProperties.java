@@ -2,8 +2,8 @@ package ie.tcd.smartlock.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.EdECPrivateKey;
+import java.security.interfaces.EdECPublicKey;
 import java.time.Duration;
 
 
@@ -24,8 +24,8 @@ public record SmartLockProperties(
     }
 
     public record Jwt(
-            RSAPublicKey publicKey,
-            RSAPrivateKey privateKey,
+            EdECPublicKey publicKey,
+            EdECPrivateKey privateKey,
             Duration accessTtl,
             Duration refreshTtl
     ) {
