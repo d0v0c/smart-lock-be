@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
 
 
 @ConfigurationProperties(prefix = "smart-lock")
@@ -24,7 +25,9 @@ public record SmartLockProperties(
 
     public record Jwt(
             RSAPublicKey publicKey,
-            RSAPrivateKey privateKey
+            RSAPrivateKey privateKey,
+            Duration accessTtl,
+            Duration refreshTtl
     ) {
     }
 

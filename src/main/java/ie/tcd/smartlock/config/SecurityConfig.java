@@ -8,14 +8,13 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.security.interfaces.RSAPrivateKey;
@@ -32,6 +31,9 @@ import java.security.interfaces.RSAPublicKey;
  */
 @Configuration
 public class SecurityConfig {
+    public static final String TYP_CLAIM = "typ";
+    public static final String TYP_ACCESS = "access";
+    public static final String TYP_REFRESH = "refresh";
     // 从配置文件中注入 RSA 公钥，用于 JWT 验证
     private final RSAPublicKey publicKey;
     // 从配置文件中注入 RSA 私钥，用于 JWT 签名
@@ -49,13 +51,14 @@ public class SecurityConfig {
             // 配置不需要登录的白名单 URL
         http.authorizeHttpRequests(authorize -> authorize
                     .requestMatchers( "/api/user/register", "/api/user/reset",
-                            "/api/user/login", "/swagger-ui/**", "/v3/api-docs*/**").permitAll()
+                            "/api/user/login", "/api/user/refresh",
+                            "/swagger-ui/**", "/v3/api-docs*/**").permitAll()
                     .anyRequest().authenticated())  // 其他任何URL都需要登录
             // 关闭 CSRF 防护
             .csrf(CsrfConfigurer::disable)
             // 发现 Authorization: Bearer 时触发 JWT 的认证逻辑
             .oauth2ResourceServer(oauth2 -> oauth2
-                    .jwt(Customizer.withDefaults()))    // 自动寻找 JwtDecoder、公钥文件
+                    .jwt(jwt -> jwt.decoder(accessJwtDecoder())))    // 自动寻找 JwtDecoder、公钥文件
             // 设置会话管理策略为无状态（服务器不存 Session ID）
             .sessionManagement(session -> session
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -70,7 +73,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // 配置 JWT 编码器，用私钥对 JWT 进行签名
+    // 配置 JWT 编码器，用私钥对 JWT 进行签名（access 和 refresh 共用同一对 RSA 密钥）
     @Bean
     JwtEncoder jwtEncoder() {
         JWK jwk = new RSAKey.Builder(this.publicKey) // 构建 RSA 密钥对，其中包含公钥
@@ -78,5 +81,34 @@ public class SecurityConfig {
                 .build();
         JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk)); // 创建一个 JWK (JSON Web Key) 集合
         return new NimbusJwtEncoder(jwks); // 返回基于 Nimbus 的 JWT 编码器
+    }
+
+    /**
+     * 专门用来解码 access token 的 decoder，给 Spring Security 过滤链用。
+     * 通过 typ=access 的 claim 校验器，防止有人拿 refresh token 直接调业务接口。
+     * 一旦显式声明这个 Bean，Spring Boot 不再自动按 public-key-location 注册默认 decoder。
+     */
+    @Bean
+    JwtDecoder accessJwtDecoder() {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(this.publicKey).build();
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefault(),                                  // 默认校验：exp、nbf
+                new JwtClaimValidator<String>(TYP_CLAIM, TYP_ACCESS::equals)    // 强制 typ=access
+        ));
+        return decoder;
+    }
+
+    /**
+     * 专门用来解码 refresh token 的 decoder，给 /refresh 接口使用。
+     * 通过 typ=refresh 的 claim 校验器，防止有人拿 access token 来换新 token。
+     */
+    @Bean("refreshJwtDecoder")
+    JwtDecoder refreshJwtDecoder() {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(this.publicKey).build();
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefault(),
+                new JwtClaimValidator<String>(TYP_CLAIM, TYP_REFRESH::equals)
+        ));
+        return decoder;
     }
 }

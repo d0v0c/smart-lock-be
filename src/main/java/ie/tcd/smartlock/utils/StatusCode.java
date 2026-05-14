@@ -3,7 +3,8 @@ package ie.tcd.smartlock.utils;
 public enum StatusCode {
     SUCCESS(0, "Success"),
     SYSTEM_ERROR(500, "Server error"),
-    VALIDATION_ERROR(400, "Invalid input parameters");
+    VALIDATION_ERROR(400, "Invalid input parameters"),
+    TOKEN_INVALID(401, "Token is invalid or expired");
     //    ACCOUNT_NOT_FOUND(401, "Username does not exist"),
 //    EMAIL_NOT_MATCH(402, "Email dose not match the username"),
 //    OPERATION_ERROR(501, "后端操作失败"),

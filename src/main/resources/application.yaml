@@ -30,12 +30,6 @@ spring:
       # 缓存过期时间
       time-to-live: 10h
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          public-key-location: classpath:app.pub
-
 
 server:
   port: 8080
@@ -59,6 +53,10 @@ smart-lock:
   jwt:
     public-key: classpath:app.pub
     private-key: classpath:app.key
+    # access token 10 小时（业务接口用）
+    access-ttl: 10h
+    # refresh token 7 天（只用于换新 access）
+    refresh-ttl: 7d
 
   file:
     #  dir: /app/firmware/

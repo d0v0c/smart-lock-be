@@ -3,6 +3,8 @@ package ie.tcd.smartlock.controller;
 import ie.tcd.smartlock.model.entity.User;
 import ie.tcd.smartlock.model.entity.validation.LoginGroup;
 import ie.tcd.smartlock.model.entity.validation.RegisterGroup;
+import ie.tcd.smartlock.model.vo.req.RefreshReqVO;
+import ie.tcd.smartlock.model.vo.resp.LoginRespVO;
 import ie.tcd.smartlock.model.vo.resp.UserInfoRespVO;
 import ie.tcd.smartlock.service.UserService;
 import ie.tcd.smartlock.utils.Result;
@@ -37,12 +39,27 @@ public class UserController {
         return Result.success(null);
     }
 
-    @Operation(summary = "登录")
+    @Operation(summary = "登录", description = "返回 access token + refresh token")
     @SecurityRequirements({})
     @PostMapping("/login")
-    public Result<String> login(@RequestBody @Validated({LoginGroup.class, Default.class}) User user) {
-        String token = userService.login(user);
-        return Result.success(token);
+    public Result<LoginRespVO> login(@RequestBody @Validated({LoginGroup.class, Default.class}) User user) {
+        LoginRespVO tokens = userService.login(user);
+        return Result.success(tokens);
+    }
+
+    @Operation(summary = "刷新 token", description = "用 refresh token 换一对新的长短 token；旧 refresh 立即作废 (rotation)")
+    @SecurityRequirements({})
+    @PostMapping("/refresh")
+    public Result<LoginRespVO> refresh(@RequestBody @Validated RefreshReqVO req) {
+        LoginRespVO tokens = userService.refresh(req.getRefreshToken());
+        return Result.success(tokens);
+    }
+
+    @Operation(summary = "登出", description = "删除当前用户的 refresh token，access token 只能自然过期")
+    @PostMapping("/logout")
+    public Result<Void> logout(Authentication authentication) {
+        userService.logout(authentication.getName());
+        return Result.success(null);
     }
 
     @Operation(summary = "获取用户信息")

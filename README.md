@@ -15,7 +15,7 @@
 ## 技术栈
 
 - 登录鉴权：基于 Spring Security 的 ==长短 JWT 机制==
-- 门锁通信：基于 Spring Integration + MQTT Topic 的==多线程==路由分发
+- 门锁通信：基于 Spring Integration + MQTT Topic 的多线程路由分发
 - 实时告警：基于 WebSocket + STOMP 的服务端推送
 - 生成临时密码：基于 Spring Boot 4 的协程（虚拟线程）+ CompletableFuture 非阻塞延迟确认。
 
