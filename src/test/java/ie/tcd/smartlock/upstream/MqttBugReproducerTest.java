@@ -1,7 +1,8 @@
-package ie.tcd.smartlock.mqtt;
+package ie.tcd.smartlock.upstream;
 
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -20,6 +21,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+/**
+ * Upstream bug reproducer for
+ * <a href="https://github.com/spring-projects/spring-integration/issues/10990">
+ * spring-projects/spring-integration#10990</a>.
+ * <p>
+ * <strong>Not part of this project's test suite.</strong> Assertions are written
+ * for the POST-FIX behavior, so this test WILL fail on the current Spring
+ * Integration version (7.0.4). Re-enable manually to verify against newer
+ * framework releases.
+ */
+@Disabled("Upstream bug reproducer — see Javadoc / Issue #10990. Disabled to avoid CI failures.")
 @SpringJUnitConfig
 public class MqttBugReproducerTest {
     @Autowired
