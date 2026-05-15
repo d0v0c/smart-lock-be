@@ -35,3 +35,4 @@ build/
 .pem
 .docker
 .claude
+*app.key

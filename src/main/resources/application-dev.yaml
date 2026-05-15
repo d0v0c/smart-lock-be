@@ -31,3 +31,6 @@ smart-lock:
     username: admin
     password: ${MQTT_PASSWORD:alice123456}
     url: tcp://127.0.0.1:1883
+
+  file:
+    dir: ./firmware/

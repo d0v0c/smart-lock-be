@@ -7,7 +7,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/smart_lock?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: ${DB_PASSWORD:iotcs7ns2}
+    password: ${DB_PASSWORD:CHANGE_ME}
     # 数据库连接池 HikariCP
     hikari:
       # 最大连接数，经验公式：连接数 = ((核心数 * 2) + 有效磁盘数)。默认 10 个连接。
@@ -44,8 +44,8 @@ mybatis-plus:
 smart-lock:
   mqtt:
     username: alice
-    password: ${MQTT_PASSWORD:alice123456}
-    url: ssl://emqx.8117.me:8883
+    password: ${MQTT_PASSWORD:CHANGE_ME}
+    url: ${MQTT_URL:ssl://localhost:8883}
     client-id: spring_boot_4
     # 指定 fullchain.pem 证书路径
     cert-file: classpath:fullchain.pem
@@ -57,7 +57,6 @@ smart-lock:
     refresh-ttl: 7d
 
   file:
-    #  dir: /app/firmware/
-    dir: ./firmware/
+    dir: /app/firmware/
 
 
