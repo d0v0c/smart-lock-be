@@ -22,11 +22,35 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: smart_lock
     volumes:
       - ./.docker/mysql/data:/var/lib/mysql
+      # 数据目录为空时，MySQL 启动会自动执行该 SQL 完成建库建表
+      - ./smart_lock_be.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
 
   redis:
     image: redis:8.6-alpine
     container_name: redis
     ports:
       - "6379:6379"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smart-lock-be:latest
+    container_name: smart-lock-be
+    depends_on:
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_started
+      emqx:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/smart_lock?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATA_REDIS_HOST: redis
+      SMARTLOCK_MQTT_URL: tcp://emqx:1883

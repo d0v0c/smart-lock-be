@@ -21,9 +21,7 @@
 
 ## Quick Start
 
-==docker-compose up -d==
-
-mvn spring-boot:run
+docker-compose up -d
 
 访问 http://localhost:8080/swagger-ui/index.html
 

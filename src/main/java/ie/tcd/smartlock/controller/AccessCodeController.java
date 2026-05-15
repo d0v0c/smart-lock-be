@@ -1,6 +1,6 @@
 package ie.tcd.smartlock.controller;
 
-import ie.tcd.smartlock.annotation.Debounce;
+import ie.tcd.smartlock.aspect.Debounce;
 import ie.tcd.smartlock.model.entity.AccessCode;
 import ie.tcd.smartlock.model.vo.req.AccessCodeGenerateReqVO;
 import ie.tcd.smartlock.service.AccessCodeService;

@@ -1,0 +1,50 @@
+# Build output
+target/
+build/
+
+# Maven wrapper internals (the wrapper script itself stays)
+.mvn/wrapper/maven-wrapper.jar
+
+# Git / CI
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+
+# Docker / Compose artifacts (volumes mounted at ./.docker/)
+.docker/
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+.dockerignore
+
+# Docs
+*.md
+HELP.md
+
+# Database init scripts (loaded by MySQL container, not the app image)
+*.sql
+
+# Secrets / local config
+application-local.yml
+application-local.properties
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Claude / misc
+.claude/

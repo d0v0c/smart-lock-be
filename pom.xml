@@ -9,9 +9,9 @@
         <version>4.0.6</version>
         <relativePath/> <!-- 空标签表示 lookup parent from 远程中央仓库 -->
     </parent>
-    <groupId>ie.tcd.scss</groupId>
-    <artifactId>smart-door-lock</artifactId>
-    <version>1.1.0</version>
+    <groupId>ie.tcd</groupId>
+    <artifactId>smart-lock-be</artifactId>
+    <version>1.0.0</version>
     <name>smart-door-lock-backend</name>
     <description>智能门锁后端</description>
     <properties>
@@ -160,35 +160,6 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!--            <plugin>-->
-            <!--                <groupId>com.spotify</groupId>-->
-            <!--                <artifactId>docker-maven-plugin</artifactId>-->
-            <!--                <version>1.2.2</version>-->
-            <!--                <executions>-->
-            <!--                    <execution>-->
-            <!--                        <id>build-image</id>-->
-            <!--                        <phase>package</phase>-->
-            <!--                        <goals>-->
-            <!--                            <goal>build</goal>-->
-            <!--                        </goals>-->
-            <!--                    </execution>-->
-            <!--                </executions>-->
-            <!--                <configuration>-->
-            <!--                    <imageName>${project.artifactId}</imageName>-->
-            <!--                    <imageTags>-->
-            <!--                        <imageTag>latest</imageTag>-->
-            <!--                    </imageTags>-->
-            <!--                    <dockerDirectory>${project.basedir}</dockerDirectory>-->
-            <!--                    <dockerHost>http://localhost:2375</dockerHost>-->
-            <!--                    <resources>-->
-            <!--                        <resource>&lt;!&ndash;这里配置的就是打包后jar所在的位置&ndash;&gt;-->
-            <!--                            <targetPath>/</targetPath>-->
-            <!--                            <directory>${project.build.directory}</directory>&lt;!&ndash;构建的class文件路径 一般是target&ndash;&gt;-->
-            <!--                            <include>${project.build.finalName}.jar</include>-->
-            <!--                        </resource>-->
-            <!--                    </resources>-->
-            <!--                </configuration>-->
-            <!--            </plugin>-->
         </plugins>
     </build>
 

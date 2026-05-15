@@ -1,4 +1,4 @@
-package ie.tcd.smartlock.annotation;
+package ie.tcd.smartlock.aspect;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

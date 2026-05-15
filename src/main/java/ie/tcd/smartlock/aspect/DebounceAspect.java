@@ -1,4 +1,4 @@
-package ie.tcd.smartlock.annotation;
+package ie.tcd.smartlock.aspect;
 
 import ie.tcd.smartlock.utils.TooManyRequestsException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,6 +61,7 @@ public class DebounceAspect {
 
         // 解析注解参数
         MethodSignature sig = (MethodSignature) pjp.getSignature();
+        // SpEL 1) 拿到函数
         Method method = sig.getMethod();
         Debounce ann = method.getAnnotation(Debounce.class);
         long ttl = DEFAULT_TTL_MS;
@@ -138,17 +139,21 @@ public class DebounceAspect {
     // args = [AccessCodeGenerateReqVO 实例, Authentication 实例];
     private Object evaluate(String expr, Method method, Object[] args) {
         StandardEvaluationContext ctx = new StandardEvaluationContext();
+        // SpEL 2) 拿到参数名
         // names = ["request", "authentication"]
         String[] names = paramDiscoverer.getParameterNames(method);
         if (names != null) {
             for (int i = 0; i < names.length && i < args.length; i++) {
+                // SpEL 3) 参数名 -- 参数实例 字典
                 // "request" AccessCodeGenerateReqVO 实例
                 // "authentication" Authentication 实例
                 ctx.setVariable(names[i], args[i]);
             }
         }
+        // SpEL 4) 编译表达式
         // "#request" ".deviceId"
         Expression expression = parser.parseExpression(expr);
+        // SpEL 5) 根据字典运行表达式
         // "#request" -> ctx("request") -> AccessCodeGenerateReqVO 实例
         // ".deviceId" -> AccessCodeGenerateReqVO.getDeviceId()
         return expression.getValue(ctx);
