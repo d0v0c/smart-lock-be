@@ -36,10 +36,10 @@ server:
 
 mybatis-plus:
   configuration:
-    #    自动转换 数据库下划线命名 -> Java 实体类驼峰命名
+    # 自动转换 数据库下划线命名 -> Java 实体类驼峰命名
     map-underscore-to-camel-case: true
-  #    去 mapper 文件夹下找到 Mapper 结尾的 XML 文件。
-  mapper-locations: classpath*:mapper/*Mapper.xml
+  # 去 mapper 文件夹下找到 Mapper 结尾的 XML 文件。
+#  mapper-locations: classpath*:mapper/*Mapper.xml
 
 smart-lock:
   mqtt:

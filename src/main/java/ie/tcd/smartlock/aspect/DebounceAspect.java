@@ -48,7 +48,7 @@ public class DebounceAspect {
 
     // 拦截函数执行 任意返回类型 controller包 所有子包 所有类 所有方法 任意参数
     // execution   *  smartlock.controller  ..     *      .*     (..)
-    @Around("execution(* ie.tcd.smartlock.controller..*.*(..))")
+    @Around("@within(org.springframework.web.bind.annotation.RestController)")
     public Object around(ProceedingJoinPoint pjp) throws Throwable {
         // HTTP 上下文
         ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();

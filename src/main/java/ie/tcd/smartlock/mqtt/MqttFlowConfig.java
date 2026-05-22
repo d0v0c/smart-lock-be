@@ -1,19 +1,20 @@
 package ie.tcd.smartlock.mqtt;
 
+import ie.tcd.smartlock.app.controller.vo.resp.AccessCodeRespMqtt;
+import ie.tcd.smartlock.app.entity.Alert;
+import ie.tcd.smartlock.app.entity.Device;
+import ie.tcd.smartlock.app.entity.Log;
+import ie.tcd.smartlock.app.service.AccessCodeService;
+import ie.tcd.smartlock.app.service.AlertService;
+import ie.tcd.smartlock.app.service.DeviceService;
+import ie.tcd.smartlock.app.service.LogService;
 import ie.tcd.smartlock.config.SmartLockProperties;
-import ie.tcd.smartlock.model.entity.Alert;
-import ie.tcd.smartlock.model.entity.Device;
-import ie.tcd.smartlock.model.entity.Log;
-import ie.tcd.smartlock.model.vo.resp.AccessCodeRespMqtt;
-import ie.tcd.smartlock.service.AccessCodeService;
-import ie.tcd.smartlock.service.AlertService;
-import ie.tcd.smartlock.service.DeviceService;
-import ie.tcd.smartlock.service.LogService;
 import ie.tcd.smartlock.utils.BusinessException;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.Transformers;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.mqtt.core.Mqttv5ClientManager;
 import org.springframework.integration.mqtt.inbound.Mqttv5PahoMessageDrivenChannelAdapter;
@@ -73,6 +74,7 @@ public class MqttFlowConfig {
 //        return f -> f.handle(messageHandler);
         return IntegrationFlow
                 .from("mqttOutboundChannel")
+                .transform(Transformers.toJson())   // 临时使用，等 bug 修复后可以去掉
                 .handle(messageHandler)
                 .get();
     }
